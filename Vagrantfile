@@ -68,4 +68,9 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: <<-SHELL
     yum install -y kernel{,-devel}
   SHELL
+
+  config.vm.provision "ansible_local" do |ansible|
+    ansible.playbook = "provisioning/playbook.yml"
+    ansible.sudo     = true
+  end
 end
