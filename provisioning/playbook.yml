@@ -8,6 +8,13 @@
         state: latest
       notify:
       - restart ntpd
+    - name: yum install Git
+      yum:
+        name: git
+        state: latest
+      notify:
+      - show results
+
   handlers:
     - name: restart ntpd
       service:
