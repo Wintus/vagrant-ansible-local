@@ -1,0 +1,2 @@
+- name: reload system profile
+  command: source /etc/profile.d/*

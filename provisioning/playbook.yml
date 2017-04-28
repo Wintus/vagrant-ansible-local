@@ -1,9 +1,14 @@
 ---
 - hosts: all
   become: yes
+  vars:
+    ruby_version: 2.4.1
+    user: vagrant
 
   roles:
     - role: ntp
+    - role: rbenv
+      rbenv_user: "{{ user }}"
 
   tasks:
     - name: yum install Git

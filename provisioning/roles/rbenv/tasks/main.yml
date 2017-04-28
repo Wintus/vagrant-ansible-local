@@ -1,0 +1,78 @@
+---
+- name: yum install requirements for rbenv
+  yum:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('latest') }}"
+  with_items:
+    - name: gcc
+    - name: zlib-devel
+    - name: openssl-devel
+    - name: sqlite
+    - name: sqlite-devel
+    - name: mysql-devel
+    - name: libffi-devel
+    - name: readline-devel
+
+- name: install rbenv via Git
+  git:
+    repo: "{{ rbenv.repo }}"
+    dest: "{{ rbenv_root }}"
+- name: install rbenv plugins via Git
+  git:
+    repo: "{{ item.repo }}"
+    dest: "{{ rbenv_root }}/plugins/{{ item.name }}/"
+  with_items: "{{ rbenv.plugins }}"
+
+- name: create rbenv group
+  group:
+    name: "{{ rbenv_group }}"
+    state: present
+- name: add user to rbenv group
+  user:
+    name: "{{ rbenv_user }}"
+    append: yes
+    groups: "{{ rbenv_group }}"
+
+- name: change owner group of install dir
+  file:
+    path: "{{ rbenv_root }}"
+    group: rbenv
+    mode: g+rwxXs
+    state: directory
+- name: create shims dir
+  file:
+    path: "{{ rbenv_root }}/shims"
+    state: directory
+- name: create versions dir
+  file:
+    path: "{{ rbenv_root }}/versions"
+    state: directory
+
+- name: add rbenv config to profile system-wise
+  template:
+    src: rbenv.sh.j2
+    dest: /etc/profile.d/rbenv.sh
+    mode: 0755 # a=rx,u=rwx
+  register: rbenv_profile
+  notify:
+    - reload system profile
+- name: reload rbenv profile
+  command: source /etc/profile.d/rbenv.sh
+  when: rbenv_profile.changed
+- name: check rbenv command available
+  command: which rbenv
+  when: rbenv_profile.changed
+
+- name: check ruby {{ ruby_version }} installed
+  shell: bash -lc 'rbenv versions | grep {{ ruby_version }}'
+  register: installed_ruby
+- name: "install ruby {{ ruby_version }} by rbenv"
+  shell: "bash -lc 'rbenv install {{ ruby_version }}'"
+  when: installed_ruby.rc > 0
+
+- name: check ruby {{ ruby_version }} global
+  shell: bash -lc 'rbenv global | grep {{ ruby_version }}'
+  register: global_ruby
+- name: "set ruby {{ ruby_version }} system-wise"
+  shell: "bash -lc 'rbenv global {{ ruby_version }}'"
+  when: global_ruby.rc > 0
