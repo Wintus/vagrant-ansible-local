@@ -1,13 +1,11 @@
 ---
 - hosts: all
   become: yes
+
+  roles:
+    - role: ntp
+
   tasks:
-    - name: ensure ntpd is at the latest version
-      yum:
-        pkg: ntp
-        state: latest
-      notify:
-      - restart ntpd
     - name: yum install Git
       yum:
         name: git
@@ -16,10 +14,6 @@
       - show results
 
   handlers:
-    - name: restart ntpd
-      service:
-       name: ntpd
-       state: restarted
     - name: show results
       debug:
         var: RESULT.results
